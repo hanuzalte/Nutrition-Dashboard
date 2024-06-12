@@ -1,0 +1,46 @@
+Background characteristic,Mild (12.0-12.9 g/dl),Moderate (9.0-11.9 g/dl),Severe (<9.0 g/dl),Any anaemia (<13.0 g/dl),Number
+Age,,,,,
+15-19,25.3,5.5,0.3,31.1,14915
+20-29,17.5,3.5,0.3,21.3,25861
+30-39,18.5,4.1,0.3,22.9,23990
+40-49,22.0,5.4,0.7,28.1,20055
+Marital status,,,,,
+Never married,20.5,4.3,0.3,25.2,32867
+Currently married,20.0,4.5,0.4,25.0,50878
+Widowed,23.2,7.2,0.3,30.8,403
+Divorced/separated/deserted,21.0,3.6,0.9,25.5,673
+Residence,,,,,
+Urban,16.8,3.5,0.2,20.4,28670
+Rural,22.0,5.0,0.5,27.4,56152
+Schooling,,,,,
+No schooling,25.3,6.1,0.6,32.0,9243
+<5 years complete,24.5,5.8,0.6,30.9,5425
+5-7 years complete,22.2,4.8,0.8,27.8,11230
+8-9 years complete,23.2,5.4,0.3,28.9,17013
+10-11 years complete,18.7,4.3,0.3,23.3,15234
+12 or more years complete,15.7,3.0,0.2,18.9,26677
+Religion,,,,,
+Hindu,20.0,4.4,0.4,24.8,67382
+Muslim,22.6,4.9,0.2,27.8,13071
+Christian,15.5,2.5,0.3,18.3,2235
+Sikh,18.2,4.2,0.5,22.9,726
+Buddhist/Neo-Buddhist,17.6,7.7,0.5,25.9,931
+Jain,19.0,1.2,0.0,20.1,218
+Other,22.0,1.5,0.3,23.8,259
+Caste/tribe,,,,,
+Scheduled caste,20.9,4.8,0.4,26.1,17455
+Scheduled tribe,26.3,5.9,0.5,32.7,7904
+Other backward class,18.2,4.0,0.4,22.6,35442
+Other,20.6,4.5,0.4,25.5,23561
+Don't know,24.1,3.1,0.2,27.5,461Wealth quintile,,,,,
+Lowest,28.7,6.5,0.7,35.9,14528.0
+Second,22.7,5.3,0.5,28.6,17169.0
+Middle,19.3,4.2,0.4,23.9,18345.0
+Fourth,16.8,3.6,0.2,20.6,18716.0
+Highest,14.9,3.0,0.1,18.0,16064.0
+Smoking status,,,,,
+Smokes cigarettes/tobacco,21.8,5.2,0.6,27.6,34045.0
+Does not smoke,19.2,4.0,0.3,23.4,50777.0
+Total age 15-49,20.2,4.5,0.4,25.1,84822.0
+Age 50-54,24.0,7.2,0.9,32.1,7998.0
+Total age 15-54,20.5,4.7,0.4,25.7,92820.0
