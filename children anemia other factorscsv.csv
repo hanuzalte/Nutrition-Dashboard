@@ -1,4 +1,6 @@
-Characteristic,Mild(10.0-10.9 g/dl),"Moderate(7.0-9.9 g/dl)","Severe(<7.0 g/dl)",Any(<11.0 g/dl)
+Background,Mild(10.0-10.9 g/dl),"Moderate(7.0-9.9 g/dl)
+","Severe(<7.0 g/dl)
+",Any(<11.0 g/dl)
 "Age in months,6-8",29,44.2,2,75.2
 "Age in months,9-11",27.5,48.1,3.1,78.7
 "Age in months,12-17",26.3,50.3,3.5,80
