@@ -1,4 +1,4 @@
-Background characteristic,with_salt_tested,with_salt_but_not_tested,with_no_salt,percentage_with_iodised_salt
+Background,with_salt_tested,with_salt_but_not_tested,with_no_salt,percentage_with_iodised_salt
 Urban,99.2,0.3,0.5,96.9
 Rural,99.5,0.1,0.4,93
 Hindu,99.4,0.1,0.4,94
