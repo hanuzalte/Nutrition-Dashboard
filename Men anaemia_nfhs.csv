@@ -1,5 +1,5 @@
 Anaemia_status,Urban_5,Rural_5,Total_5,Urban_4,Rural_4,Total_4,Urban_3,Rural_3,Total_3
-Mild,16.8,22,NA,9.9,13.2,NA,10.8,14.2,NA
-Moderate,3.5,5,NA,7.6,10.9,NA,6.2,11.9,NA
-Severe,0.2,0.5,NA,0.9,1.2,NA,0.7,1.6,NA
-Any Anaemia,20.4,27.4,NA,18.5,25.3,NA,17.7,27.7,NA
+Mild,16.8,22,16.4,9.9,13.2,11.5,10.8,14.2,12,5
+Moderate,3.5,5,4.2,7.6,10.9,9,6.2,11.9,11
+Severe,0.2,0.5,0.34,0.9,1.2,4,0.7,1.6,5
+Any Anaemia,20.4,27.4,47,18.5,25.3,43,17.7,27.7,54
