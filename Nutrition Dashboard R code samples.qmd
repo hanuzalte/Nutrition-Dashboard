@@ -1,0 +1,1099 @@
+---
+title: "Nurition Dashboard"
+author: "Hanuman Zalte"
+format: html
+editor: visual
+---
+
+```{r}
+library(shiny)
+library(sf)
+library(leaflet)
+library(dplyr)
+library(shinydashboard)
+library(htmltools)
+library(htmlwidgets)
+library(reshape2)
+library(rsconnect)
+library(ggplot2)
+library(plotly)
+library(RColorBrewer)
+library(ggiraph)
+library(tidyverse)
+```
+
+
+```{r}
+# Load the GeoJSON file for India states
+india_states <- st_read("https://raw.githubusercontent.com/ShrutiReddy21/statedata/main/INDIA_STATES.geojson")
+
+caloric_intake <-  read.csv("https://raw.githubusercontent.com/haarshhhhh/NUTRITION-INDIA/main/caloric%20intake.csv")
+
+india_states1 <- st_read("https://raw.githubusercontent.com/ShrutiReddy21/statedata/main/INDIA_STATES.geojson")
+
+anemia_men_other_factors<-read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard//main/anemia%20men's%20population%20groupwise.csv")
+anemia_women_other_factors<-read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/women%20anemia%20population%20group-wise.csv")
+anemia_children_other_factors<-read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/children%20anemia%20other%20factorscsv.csv")
+# Load the CSV files for anemia prevalence data
+anemia_data_women <- read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/anaemia_data%20_women_sw.csv")
+anemia_data_men <- read.csv("https://raw.githubusercontent.com/haarshhhhh/NUTRITION-INDIA/main/anemia_data_men_map.csv")
+anemia_data_children <- read.csv("https://raw.githubusercontent.com/ShrutiReddy21/anemia_data/main/children_anemia_2019-21.csv")
+anemia_data_women
+anemia_data_men
+anemia_data_children
+
+anemia_data_women$Any_Anemia <- as.numeric(anemia_data_women$Any_Anemia)
+anemia_data_men$Any_Anemia <- as.numeric(anemia_data_men$Any_Anemia)
+anemia_data_children$Any_Anemia <- as.numeric(anemia_data_children$Any_Anemia)
+
+# Load India shapefile for first code
+india_sf <- st_read("https://raw.githubusercontent.com/ShrutiReddy21/statedata/main/INDIA_STATES.geojson")
+
+# Sample data: region-wise consumption data for first code
+data <- read.csv("https://raw.githubusercontent.com/ShrutiReddy21/Calorie-intake-data/main/Daily%20Calorie%20intake%20region%20wise.csv")
+
+#iodine Consumption
+
+df1 <- data.frame(
+  State = c("Arunachal Pradesh", "Assam", "Chandigarh", "Chattisgarh", "Delhi", "Goa", "Haryana", "Himachal Pradesh", 
+            "Jharkhand", "Karnataka", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Punjab", "Rajasthan", "Sikkim", 
+            "Tripura", "Uttrakhand", "Telangana", "Andaman & Nicobar Islands", "Bihar", "Gujarat", "Kerala", 
+            "Lakshadweep", "Madhya Pradesh", "Odisha", "Tamil Nadu", "Uttar Pradesh", "West Bengal", "Andhra Pradesh", 
+            "Puducherry", "Maharashtra", "Daman & Diu", "Dadra and Nagar Haveli", "Ladakh", "Jammu & Kashmir"),
+  iodised_salt_consumption_among_adults = c(99.2, 98.8, 96.8, 98.5, 96.8, 97.6, 96.1, 99.1, 97.7, 92.8, 99.3, 90.6, 99, 98.9, 94.8, 94.2, 98.2, 
+                                            99.5, 93.2, 95.8, 99.7, 93.3, 95.6, 99.3, 96.7, 95.3, 98, 92, 92.5, 94.5, 83.1, 93.3, 96.2, 89.1, 
+                                            89.1, 98.8, 98.1)
+)
+
+df2 <- data.frame(
+  State = c("Arunachal Pradesh", "Assam", "Chandigarh", "Chattisgarh", "Delhi", "Goa", "Haryana", "Himachal Pradesh", 
+            "Jharkhand", "Karnataka", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Punjab", "Rajasthan", "Sikkim", 
+            "Tripura", "Uttrakhand", "Telangana", "Andaman & Nicobar Islands", "Bihar", "Gujarat", "Kerala", 
+            "Lakshadweep", "Madhya Pradesh", "Odisha", "Tamil Nadu", "Uttar Pradesh", "West Bengal", "Andhra Pradesh", 
+            "Puducherry", "Maharashtra", "Daman & Diu", "Dadra and Nagar Haveli", "Ladakh", "Jammu & Kashmir"),
+  children_living_in_iodized_salt_households_below_5_years = c(99.3, 98.3, 98.1, 98.2, 98.2, 97.8, 96.4, 99.2, 97.4, 
+                                                               91.5, 99.4, 90.9, 99.1, 99.5, 95.1, 94, 98.1, 99.4, 
+                                                               93, 96.1, 100, 93.1, 94.5, 99.5, 97, 95.1, 98.1, 92.7, 
+                                                               92, 94, 82.5, 94.3, 95.9, 87, 87, 98.7, 97.8)
+)
+
+
+merged_df <- merge(df1, df2, by = "State")
+
+
+# Load Data
+women_data <- read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/women%27s%20food%20consumption_%202019-21.csv")
+men_data <- read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/men%27s%20food%20consumption_2019-21.csv")
+women_popgrpwise<-read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/Women's%20Food%20Consumption%20Population%20Groupwise.csv")
+men_popgrpwise<- read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/Mens%20Food%20Consumption%20Population%20group%20wise.csv")
+print(head(women_data))
+print(head(men_data))
+
+iodine_popgrpwise <- read.csv("https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/iodine%20other%20factors.csv")
+
+
+colorieintake <- data.frame(
+  region = c("Central", "East", "North", "North East", "South", "West"),
+  Added_Fats = c(212, 183, 225, 156, 218, 325),
+  Animal_Source_Proteins = c(11, 36, 11, 55, 51, 21),
+  Sweeteners = c(112, 64, 133, 65, 92, 137),
+  Dairy_Foods = c(115, 87, 247, 50, 131, 159),
+  Fruits = c(22, 24, 30, 31, 45, 42),
+  Legumes = c(91, 68, 85, 64, 101, 106),
+  Potato_and_Cassava = c(45, 106, 76, 53, 14, 33),
+  Processed_Food = c(212, 228, 172, 176, 283, 235),
+  Spices = c(33, 29, 29, 20, 55, 39),
+  Nuts = c(10, 3, 2, 2, 51, 22),
+  Vegetables = c(51, 57, 56, 54, 55, 59),
+  Whole_Grains = c(1302, 1346, 1218, 1457, 1115, 983)
+)
+
+colorieintake <- colorieintake %>%
+  rename_with(~ gsub("_", " ", .x))
+
+colorieintake_long <- colorieintake %>%
+  pivot_longer(cols = -region, names_to = "category", values_to = "calories")
+
+colorieintake_long <- colorieintake_long %>%
+  group_by(region) %>%
+  mutate(percentage = (calories / sum(calories)) * 100)
+
+india_map <- st_read("https://raw.githubusercontent.com/ShrutiReddy21/statedata/main/INDIA_STATES.geojson")
+
+print(head(india_map))
+
+men_data_map <- left_join(india_map, men_data, by = c("STNAME_SH" = "STNAME"))
+women_data_map <- left_join(india_map, women_data, by = c("STNAME_SH"="STNAME"))
+
+print(head(men_data_map))
+print(head(women_data_map))
+
+df1 <- data.frame(
+  State = c("Arunachal Pradesh", "Assam", "Chandigarh", "Chattisgarh", "Delhi", "Goa", "Haryana", "Himachal Pradesh", 
+            "Jharkhand", "Karnataka", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Punjab", "Rajasthan", "Sikkim", 
+            "Tripura", "Uttrakhand", "Telangana", "Andaman & Nicobar Islands", "Bihar", "Gujarat", "Kerala", 
+            "Lakshadweep", "Madhya Pradesh", "Odisha", "Tamil Nadu", "Uttar Pradesh", "West Bengal", "Andhra Pradesh", 
+            "Puducherry", "Maharashtra", "Daman & Diu", "Dadra and Nagar Haveli", "Ladakh", "Jammu & Kashmir"),
+  iodised_salt = c(99.2, 98.8, 96.8, 98.5, 96.8, 97.6, 96.1, 99.1, 97.7, 92.8, 99.3, 90.6, 99, 98.9, 94.8, 94.2, 98.2, 
+                   99.5, 93.2, 95.8, 99.7, 93.3, 95.6, 99.3, 96.7, 95.3, 98, 92, 92.5, 94.5, 83.1, 93.3, 96.2, 89.1, 
+                   89.1, 98.8, 98.1)
+)
+
+df2 <- data.frame(
+  State = c("Arunachal Pradesh", "Assam", "Chandigarh", "Chattisgarh", "Delhi", "Goa", "Haryana", "Himachal Pradesh", 
+            "Jharkhand", "Karnataka", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Punjab", "Rajasthan", "Sikkim", 
+            "Tripura", "Uttrakhand", "Telangana", "Andaman & Nicobar Islands", "Bihar", "Gujarat", "Kerala", 
+            "Lakshadweep", "Madhya Pradesh", "Odisha", "Tamil Nadu", "Uttar Pradesh", "West Bengal", "Andhra Pradesh", 
+            "Puducherry", "Maharashtra", "Daman & Diu", "Dadra and Nagar Haveli", "Ladakh", "Jammu & Kashmir"),
+  children_living_in_iodized_salt_households_below_5_years = c(99.3, 98.3, 98.1, 98.2, 98.2, 97.8, 96.4, 99.2, 97.4, 
+                                                               91.5, 99.4, 90.9, 99.1, 99.5, 95.1, 94, 98.1, 99.4, 
+                                                               93, 96.1, 100, 93.1, 94.5, 99.5, 97, 95.1, 98.1, 92.7, 
+                                                               92, 94, 82.5, 94.3, 95.9, 87, 87, 98.7, 97.8)
+)
+
+
+# Read data from file 
+df <- read.csv("https://raw.githubusercontent.com/haarshhhhh/NUTRITION-INDIA/main/nutrient_cost_data.csv", row.names = 1)
+
+# Convert row names to a column 
+df$country <- rownames(df) 
+rownames(df) <- NULL
+
+# Define state-to-region mapping
+state_to_region <- data.frame(
+  state = c("Jammu & Kashmir", "Himachal Pradesh", "Punjab", "Uttarakhand", "Haryana", "Delhi", "Uttar Pradesh","Ladakh", 
+            "Bihar", "Jharkhand", "Odisha", "West Bengal",
+            "Assam", "Arunachal Pradesh", "Manipur", "Meghalaya", "Nagaland", "Tripura", "Sikkim",
+            "Goa", "Gujarat", "Maharashtra", "Rajasthan",
+            "Chhattisgarh", "Madhya Pradesh",
+            "Andhra Pradesh", "Karnataka", "Kerala", "Tamil Nadu", "Telangana"),
+  region = c(rep("North", 8),
+             rep("East", 4),
+             rep("North_East", 7),
+             rep("West", 4),
+             rep("Central", 2),
+             rep("South", 5))
+)
+
+# Merge shapefile with state-to-region mapping
+india_sf <- india_sf %>%
+  left_join(state_to_region, by = c("STNAME_SH" = "state"))
+
+# Merge with data
+india_sf <- india_sf %>%
+  left_join(data, by = c("region" = "Region"))
+
+
+# Define a custom color palette
+custom_colors <- c("#10477E1A", "#10477E33", "#10477E4D", "#10477E66", "#10477E80", "#10477E99", "#10477EB3", "#10477ECC", "#10477EE6", "#10477e")
+# Define custom color function with explicit bins for first code
+customColor1 <- colorBin(
+  palette = c("#002A42","#10477E", "#3F8589","#97CA94","#FFA80B","#E54B4B"),
+  domain = india_sf$Total,
+  na.color = "transparent"
+)
+
+
+custom_colors3 <- c(  "#10477EE6", "#10477e",  "#10477EE6", "#10477e", "#10477EE6", "#10477e", "#10477EE6", "#10477e")
+
+
+
+
+
+url_children <- "https://raw.githubusercontent.com/haarshhhhh/NUTRITION-INDIA/main/children_anemia_nfhs345_comparison.csv"
+url_men <- "https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/Men%20anaemia_nfhs.csv"
+url_women <- "https://raw.githubusercontent.com/hanuzalte/Nutrition-Dashboard/main/Women%20anaemia(nfhs).csv"
+
+comparedata <- read_csv(url_children)
+comparedata1 <- read_csv(url_men)
+comparedata2 <- read_csv(url_women)
+
+# Clean column names
+colnames(comparedata) <- str_trim(colnames(comparedata))
+colnames(comparedata1) <- str_trim(colnames(comparedata1))
+colnames(comparedata2) <- str_trim(colnames(comparedata2))
+
+# Filter and select specific columns
+any_anaemia_data1 <- comparedata %>%
+  filter(Anaemia_status == "Any Anaemia") %>%
+  select(Anaemia_status, starts_with("Urban_"), starts_with("Rural_"))
+
+any_anaemia_data2 <- comparedata1 %>%
+  filter(Anaemia_status == "Any Anaemia") %>%
+  select(Anaemia_status, starts_with("Urban_"), starts_with("Rural_"))
+
+any_anaemia_data3 <- comparedata2 %>%
+  filter(Anaemia_status == "Any Anaemia") %>%
+  select(Anaemia_status, starts_with("Urban_"), starts_with("Rural_"))
+
+# Combine filtered datasets
+combined_anaemia_data <- bind_rows(any_anaemia_data1, any_anaemia_data2, any_anaemia_data3)
+```
+
+
+```{r}
+ui <- dashboardPage(
+  dashboardHeader(
+    title = tags$div(
+      style = "white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: bold;font-size: 25px;",
+      "NUTRITION IN INDIA"
+    ), 
+    titleWidth = 350,
+    tags$li(
+      a(href = "https://cpc-analytics.com/home/ourwork",
+        img(src = 'https://github.com/ShrutiReddy21/Iodine_test/blob/main/image.png?raw=true',
+            title = "company Home", height = "50px"),
+        style = "padding-top:10px; padding-bottom:10px;"),
+      class = "dropdown"
+    )
+  ),
+  dashboardSidebar(disable = TRUE),
+  dashboardBody(
+    tags$head(
+      tags$style(HTML("
+        .main-header .logo {
+          background-color: #002A42 !important;
+          color: white !important;
+        }
+        .main-header .navbar {
+          background-color: #002A42 !important;
+        }
+        .box-header {
+          background-color: #4B7FA3 !important;
+        }
+        .box-title {
+          color: white !important;
+        }
+        .tab-content {
+          margin: 20px;
+        }
+        .description {
+          margin-bottom: 15px;
+          font-size: 14px;
+          color: #555;
+        }
+        .content-wrapper {
+          background-color: #f9f9f9;
+        }
+        .sidebar {
+          background-color: #4B7FA3;
+        }
+        .sidebar .menu-item {
+          color: white !important;
+        }
+      "))
+    ),
+    
+    tags$div(
+      style =  "padding: 20px; font-size: 14px; background-color: #fff; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);",
+      tags$p(div(style = "font-weight: bold; font-size: 16px;", 
+                 "This dashboard provides insights into various aspects of nutrition in India based on data from NFHS 2021 and other sources. You can explore different dimensions of Food Consumption, Daily Caloric Intake, Cost Comparison of Food Groups, Anemia Prevalence, and Iodine Presence in Households.")),
+      tags$p(div(style ="font-weight: bold; font-size: 16px;", 
+                 "Navigate through the tabs to explore detailed maps and visualizations."))
+    ),
+    
+    tabBox(
+      width = 14,
+      tabPanel(div(style = "font-weight: bold; font-size: 20px;", "Food Consumption"),
+               fluidRow(
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "State-Wise Food Consumption Map of India (NFHS 2021)"
+                   ),
+                   solidHeader = TRUE, 
+                   width = 14,
+                   tags$div(style = "font-size: 14px; color: #555; margin-bottom: 10px;", 
+                            "The data from NFHS 5 (2019-21) reveals the percent distribution of men and women aged 15-49 consuming specific foods at least once a week across various states and union territories in India. Below is a map displaying categories and subcategories for gender and food groups. It illustrates the percentage of the population, categorized by gender, that consumes the selected food group at least once a week. For example, by selecting a specific gender and food group, you can see what proportion of men or women consume that food group weekly."),
+                   sidebarLayout(
+                     sidebarPanel(
+                       selectInput("variable", "Select Food Component:", 
+                                   choices = c("Milk or curd" = "Milk_or_curd", "Pulses or beans" = "Pulses_or_beans",
+                                               "Dark green leafy vegetables" = "Dark_green_leafy_vegetables", "Fruits" = "Fruits",
+                                               "Eggs" = "Eggs", "Chicken or meat" = "Chicken_or_meat", 
+                                               "Fish chicken or meat" = "Fish_chicken_or_meat",
+                                               "Fried Foods" = "Fried_Foods", "Aerated drinks" = "Aerated_drinks")),
+                       selectInput("gender", "Women/Men:", choices = c("Men", "Women")),
+                       radioButtons("extreme", "Display", choices = c("All", "Highest", "Lowest"))
+                       ,
+                       tags$p("Select a food component and gender to view the state-wise consumption map of India.", class = "description")
+                     ),
+                     mainPanel(
+                       leafletOutput("map")
+                     )
+                   )
+                 ),
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Population Group-Wise Food Consumption India (NFHS 2021)"),
+                   solidHeader = TRUE,
+                   width = 14,
+                   tags$div(style = "font-size: 14px; color: #555; margin-bottom: 10px;", 
+                            "The NFHS 2021 data food groups consumption once a week at least across diverse demographic groups in India. This analysis compares food consumption among men, women, and children across varying socio-economic and educational backgrounds. Below is a bar chart depicting the distribution of choice of food groups among these population groups."),
+                   sidebarLayout(
+                     sidebarPanel (
+                       selectInput("Sex", "Select Gender:",
+                                   choices = c("Men","Women")),
+                       uiOutput("BG"),
+                       uiOutput("rrb")
+                     ),
+                     mainPanel(
+                       plotlyOutput("barPlot1")
+                     )
+                   )
+                 )
+               ),
+               tags$div(style = "text-align: center;font-size: 12px; margin-top: 10px;", 
+                        "Source: NFHS 2021. Calculations by CPC Analytics.")
+      ),
+      
+      tabPanel(div(style = "font-weight: bold; font-size: 20px;", "Daily Caloric Intake"),
+               fluidRow(
+                 
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Region-wise Average Daily Caloric Intake"
+                   ),
+                   solidHeader = TRUE,
+                   width = 15,
+                   height = 700,
+                   tags$p("Pie charts showing the break-down of diet between different food groups for different regions.", class = "description"),
+                   sidebarLayout(
+                     sidebarPanel(
+                       selectInput("region", "Select Region:", choices = unique(colorieintake_long$region))
+                     ),
+                     mainPanel(
+                       div(style = "display: flex; justify-content: center;",
+                           plotlyOutput("pieChart"),textOutput("totalCalories")
+                       ),
+                       
+                       div(style = "text-align: center; margin-top: 20px;",
+                           textOutput("totalText")
+                       )
+                       
+                     )
+                   )
+                 ),
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Comparison of population group's diets with EAT Lancet Reference diet standards"
+                   ),
+                   solidHeader = TRUE,
+                   width = 12,
+                   
+                   tags$p("The EAT-Lancet Commission on Food, Planet, Health suggested reference norms for adequate intake, measured as the count of calories across different food groups. Below is a comparison of different population groups and their daily calorie intake with the EAT-Lancet reference diet.", class = "description"),
+                   sidebarLayout(
+                     sidebarPanel (
+                       selectInput("Food", "Select Food Group",
+                                   choices = c("Total","Whole_grains",
+                                               "Potato_and_Cassava","Vegetables","Fruits","Dairy_Foods","Protein_sources","All_Animal_source_proteins","Beef_and_lamb",
+                                               "Poultry","Eggs","Fish","Legumes","Tree_nuts","Added_fats","Palm_Oil","Unsaturated_Fats"))
+                     ),
+                     mainPanel(
+                       plotlyOutput("barPlot2")
+                     )
+                   )
+                 )
+               ),
+               tags$div(style = "text-align: center; margin-top: 10px;", 
+                        "Source: Sharma et al. BMC Public Health (2020). Calculations by CPC Analytics.")
+      ),
+      
+      tabPanel(div(style = "font-weight: bold; font-size: 20px;", "Cost Comparison of Food Groups"),
+               fluidRow(
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Cost Comparison of Food Groups Between Countries (World Bank 2023)"
+                   ),
+                   subtitle = "Value is in $",
+                   solidHeader = TRUE, 
+                   width = 14,
+                   tags$div(style = "font-size: 14px; color: #555; margin-bottom: 10px;", 
+                            "The comparative analysis between different food groups between given countries highlights the relative costs of various food groups across different countries, with India as the baseline. The costs of a nutrient-adequate diet and food groups like fruits, vegetables, and starchy staples in India are generally lower compared to countries such as the United States, Nepal, and Mexico. Conversely, some countries like Pakistan and Bangladesh offer certain food groups at cheaper rates than India. These disparities reflect differences in agricultural productivity, economic conditions, and cost of living. A nutrient-adequate diet in Nepal is 20.7% more expensive than in India, Pakistan offers it at 8.4% cheaper. Similarly, fruits are significantly more expensive in Nepal (103.6% higher) but slightly more expensive in Nigeria (3.6% higher)."),
+                   sidebarLayout(
+                     sidebarPanel(
+                       selectInput("cost_type", "Select Cost Type:", 
+                                   choices = c("Cost of a Nutrient Adequate Diet" = "Cost_of_nutrient_adequate_diet",
+                                               "Cost of Fruits" = "Cost_of_fruits",  
+                                               "Cost of Vegetables" = "Cost_of_vegetables", 
+                                               "Cost of Starchy Staples" = "Cost_of_starchy_staples",
+                                               "Cost of Animal-Source Foods" = "Cost_of_animal_source_foods", 
+                                               "Cost of Legumes, Nuts, and Seeds" = "Cost_of_legumes_nuts_and_seeds", 
+                                               "Cost of Oils and Fats" = "Cost_of_oils_and_fats")),
+                       tags$p("Select a cost type to compare the costs of different food groups between countries.", class = "description")
+                     ),
+                     mainPanel(
+                       plotlyOutput("barPlot")
+                     )
+                   )
+                 )
+               ),
+               tags$div(style = "text-align: center;font-size: 12px; margin-top: 10px;", 
+                        "Source: Herforth et al. (2022), adapted by World Bank (2023).")
+      ),
+      
+      tabPanel(div(style = "font-weight: bold; font-size: 20px;", "Anemia Prevalence"),
+               fluidRow(
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "State-Wise Anemia Prevalence in India (NFHS 2021)"
+                   ),
+                   solidHeader = TRUE, 
+                   width = 14,
+                   tags$div(style = "font-size: 14px; color: #555; margin-bottom: 10px;", 
+                            "Explore the state-wise prevalence of anemia in India among different population categories, based on NFHS 2021 data.(g/dL, or grams per deciliter, is a concentration unit often used in medical settings to quantify the amount of a substance within a specific volume of blood. In the context of anemia, it measures the hemoglobin concentration in the blood.)"),
+                   sidebarLayout(
+                     sidebarPanel(
+                       selectInput("Category1", "Select Population Category:", choices = c("Women", "Men", "Children")),radioButtons("extreme1", "Display", choices = c("All", "Highest", "Lowest")),
+                       style = "background-color: #f8f9fa; padding: 20px;",
+                       tags$p("Select a population category to view the state-wise anemia prevalence in India.", class = "description")
+                     ),
+                     mainPanel(
+                       leafletOutput("indiamap")
+                     )
+                   )
+                 ),
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Anemia Prevalence comparison over time in India (NFHS)"
+                   ),
+                   solidHeader = TRUE,
+                   width = 14,
+                   sidebarLayout(
+                  sidebarPanel(  
+                   selectInput(
+                     inputId = "group",
+                     label = "Select Group:",
+                     choices = c("Women" = "women", "Men" = "men", "Children" = "children"),
+                     selected = "women"
+                   )),
+                   mainPanel(plotlyOutput("anaemiaPlot"))
+                   
+                 ))
+                 ,
+                 
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 22px;",
+                     "Population Group-Wise Anemia Prevalence of India (NFHS 2021)"),
+                   solidHeader = TRUE,
+                   width = 18,
+                   tags$div(style = "font-size: 14px; color: #555; margin-bottom: 10px;", 
+                            "The NFHS 2021 data underscores the pervasive issue of anemia across diverse demographic groups in India. This analysis compares anemia prevalence among men, women, and children across varying socio-economic and educational backgrounds, as well as different levels of smoking and tobacco use. Below is a bar chart depicting the distribution of severe, moderate, and mild anemia among these population groups.(g/dL, or grams per deciliter, is a concentration unit often used in medical settings to quantify the amount of a substance within a specific volume of blood. In the context of anemia, it measures the hemoglobin concentration in the blood.)"),
+                   sidebarLayout(
+                     sidebarPanel (
+                       selectInput("Sex", "Select Category:",
+                                   choices = c("Men","Women", "Children")),
+                       uiOutput("Cat"),
+                       uiOutput("Type1")
+                     ),
+                     mainPanel(
+                       plotlyOutput("barPlot3")
+                     )
+                   )
+                 )
+               ),
+               tags$div(style = "text-align: center;font-size: 12px; margin-top: 10px;", 
+                        "Source: NFHS 2021. Calculations by CPC Analytics.")
+      ),
+      
+      
+      tabPanel(div(style = "font-weight: bold; font-size: 20px;", "Household Consumption of Iodised Salt"),
+               fluidRow(
+                 box(
+                   title = div(
+                     style = "font-weight: bold; font-size: 20px;",
+                     "Percentage of household consuming Iodised Salt in different states"
+                   ),
+                   subtitle = "Value is in $",
+                   solidHeader = TRUE, 
+                   width = 14,
+                   height = 630,
+                   
+                   sidebarLayout(
+                     sidebarPanel(
+                       selectInput("category", "Select Category:",
+                                   choices = c("Iodised salt consumption among adults", 
+                                               "Iodised salt consumption among children below 5 years"),
+                                   selected = "Iodised salt consumption among adults")
+                     ),
+                     mainPanel(
+                       plotlyOutput("iodisedSaltPlot")  
+                     )
+                   )
+                 )
+               ),
+               tags$div(style = "text-align: center;font-size: 12px; margin-top: 10px;", 
+                        "Source: NFHS 2021. Calculations by CPC Analytics.")
+      )
+      
+      
+      
+      
+    ),
+    
+    fluidRow(
+      tags$div(style = "text-align: left; margin-top: 20px; padding: 10px; background-color: #f8f9fa; font-size: 11px;color: #6c757d", 
+               HTML("© 2024 CPC Analytics. All rights reserved.<br>
+          All content included in this dashboard is strictly for informational purposes.<br>
+          The information herein contains both original data and estimates which are subject to updation, correction, and revision.<br>
+          Discrepancies between information contained in this dashboard and other analyses, studies, articles, or publications produced by the NFHS, the World Bank, or Sharma et al. BMC Public Health may exist due to the different timing and methodologies of processing the information.<br>
+          The presentation of information on the map herein is not warranted to be error-free. It does not imply the expression of any opinion whatsoever on the part of the NFHS, the World Bank, or Sharma et al. BMC Public Health concerning the legal status of any country, area, or territory or of its authorities, or concerning the delimitation of its borders.")
+      )
+    )
+  )
+)
+```
+
+
+```{r}
+# Server 
+server <- function(input, output, session) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  output$pieChart <- renderPlotly({
+    colorieintak_region <- colorieintake_long %>% filter(region == input$region)
+    
+    # Determine which labels should be inside or outside based on the percentage
+    colorieintak_region <- colorieintak_region %>%
+      mutate(textposition = ifelse(percentage < 5, 'outside', 'inside'),
+             textinfo = ifelse(percentage < 5, 'label+percent', 'percent'))
+    
+    plot_ly(colorieintak_region, labels = ~category, values = ~calories, type = 'pie', textinfo = 'label+percent',
+            hoverinfo = 'text', text = ~paste(category, ':', round(percentage, 2), '%', '<br>Calories:', calories),
+            textposition = ~textposition, insidetextorientation = 'radial', automargin = TRUE) %>%
+      layout(title = paste("Average daily caloric intake of people in", input$region,"region of India","\nTotal Calories :",sum(colorieintak_region$calories)),
+             height = 600, width = 750,
+             margin = list(l = 20, r = 20, b = 20, t = 50),
+             showlegend = TRUE,
+             legend = list(x = 1, y = 0.5)
+      )
+  })
+  
+  
+  
+  
+  
+  
+  #Render UI according to Background
+  output$BG <-renderUI({
+    if(input$Sex == "Men"){selectInput("Group", "Select Population Group: ",choices = c("Residence","Religion","Caste","Wealth"))
+    }
+    else if (input$Sex == "Women"){selectInput("Group", "Select Population Group: ",choices = c("Residence","Religion","Caste","Wealth","Maternity Status"))}
+    else {selectInput("Group", "Select Population Group: ",choices = c("Residence","Religion","Caste","Wealth"))}
+  })
+  output$rrb<-renderUI({
+    if(input$Sex == "Men"){
+      if (input$Group == "Residence"){selectInput("Type","Select the type of residence",choices = c("Urban" , "Rural"))}
+      else if (input$Group == "Religion"){selectInput("Type","Select Religion",choices = c("Hindu","Muslim","Christian","Sikh","Buddhist","Other"))}
+      else if (input$Group == "Caste"){selectInput("Type","Select Caste", choices = c("SC","ST","OBC","Other"))}
+      else if (input$Group == "Wealth"){selectInput("Type","Select Wealth", choices = c("Lowest","Second","Middle","Fourth","Highest"))}}
+    else
+    {if (input$Group == "Residence"){selectInput("Type","Select the type of residence",choices = c("Urban" , "Rural"))}
+      else if (input$Group == "Religion"){selectInput("Type","Select Religion",choices = c("Hindu","Muslim","Christian","Sikh","Buddhist","Other"))}
+      else if (input$Group == "Caste"){selectInput("Type","Select Caste", choices = c("SC","ST","OBC","Other"))}
+      else if (input$Group == "Wealth"){selectInput("Type","Select Wealth", choices = c("Lowest","Second","Middle","Fourth","Highest"))}
+      else {selectInput("Type","Choose Maternity Status",choices = c("Pregnant","Breastfeeding","Neither"))}}
+  })
+  
+  
+  #Render Bar Plot of food consumption population group wise
+  # Plotting the graph
+  output$barPlot1 <- renderPlotly({
+    selected <- input$Type
+    selected_sex <- input$Sex
+    
+    # Assuming men_popgrpwise is your data set and it is available in the global environment
+    
+    # Filter the data to get the relevant row based on the selected Background
+    if (selected_sex == "Men") {
+      filtered_data <- men_popgrpwise[men_popgrpwise$Background == selected, ]
+    } else if (selected_sex == "Women") {
+      filtered_data <- women_popgrpwise[women_popgrpwise$Background == selected, ]
+    }
+    else {filtered_data <- men_popgrpwise[men_popgrpwise$Background == selected, ]}
+    # Melt the filtered data
+    g_melted <- melt(filtered_data, id.vars = "Background")
+    g_melted
+    
+    num_groups <- length(unique(g_melted$variable))
+    # Create the plot
+    pg <- ggplot(g_melted, aes(x = variable , y = value, fill = variable)) + 
+      geom_bar(stat = "identity") + 
+      labs(title = paste("Consumption for", gsub("_", " ", selected)), x = "Category", y = "% Consumption") + 
+      scale_fill_manual(values = custom_colors3)+
+      coord_flip() + 
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
+    # Convert to Plot ly
+    ggplotly(pg, tooltip = "y")
+    
+  })
+  output$barPlot2 <- renderPlotly({
+    selected_food <- input$Food
+    hg<-caloric_intake%>%filter(Population %in% c("Highest_MPCE_Urban","Highest_MPCE_Rural","Lowest_MPCE_Urban","Lowest_MPCE_Rural","EAT_Lancet"))
+    hg_melted <- melt(hg, id.vars = "Population")
+    hg_filtered <- hg_melted[hg_melted$variable == selected_food, ]
+    
+    
+    custom_colors <- c("Highest_MPCE_Urban" = "#10477e", "Highest_MPCE_Rural" = "#10477EE6", 
+                       "Lowest_MPCE_Urban" = "#10477ECC", "Lowest_MPCE_Rural" = "#10477EB3", 
+                       "EAT_Lancet" = "red")
+    
+    p <- ggplot(hg_filtered, aes(x = Population, y = value, fill = Population)) + 
+      geom_bar(stat = "identity") + 
+      labs(title = paste("Caloric intake - ", gsub("_", " ", selected_food)), x = "Population", y = "Calories") + 
+      scale_fill_manual(values =custom_colors) + 
+      coord_flip() + 
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
+    ggplotly(p, tooltip = "y") 
+  })
+  
+  
+  
+  long_data <- reactive({
+    data <- switch(input$group,
+                   "children" = any_anaemia_data1,
+                   "men" = any_anaemia_data2,
+                   "women" = any_anaemia_data3)
+    
+    data <- data %>%
+      pivot_longer(cols = -Anaemia_status, names_to = "Group", values_to = "Value") %>%
+      separate(Group, into = c("Location", "Survey"), sep = "_")
+    
+    data$Survey <- factor(data$Survey, levels = c("3", "4", "5"), 
+                          labels = c("2005-06", "2015-16", "2019-21"))
+    
+    data
+  })
+  
+  # Render Plotly plot
+  output$anaemiaPlot <- renderPlotly({
+    data <- long_data()
+    
+    plot_ly(
+      data = data,
+      x = ~Survey,
+      y = ~Value,
+      type = 'bar',
+      color = ~Location,
+      text = ~paste(Location, Survey, ": ", Value, "%"),
+      hoverinfo = 'text',
+      barmode = 'group'
+    ) %>%
+      layout(
+        xaxis = list(title = "Time Frame"),
+        yaxis = list(title = "Percentage")
+      )
+  })
+  
+  
+  #Render UI according to Background
+  output$Cat <-renderUI({
+    if(input$Sex == "Men"){selectInput("var", "Select Population Group: ",choices = c("Residence","Religion","Caste","Wealth","Schooling","Select Smoking status"))
+    }
+    else if (input$Sex == "Women"){selectInput("var", "Select Population Group: ",choices = c("Residence","Religion","Caste","Select Smoking status","Wealth","Schooling","Maternity Status"))}
+    else if (input$Sex == "Children") {selectInput("var", "Select Population Group: ", choices = c("Age","Residence", "Religion","Caste", "Mother's Schooling", "Caste","Living Condition", "Anemia Status of Mother", "Wealth"))}
+    else {selectInput("var", "Select Population Group: ",choices = c("Residence","Religion","Caste","Schooling","Wealth"))}
+  })
+  output$Type1<-renderUI({
+    if(input$Sex == "Men"){
+      if (input$var == "Residence"){selectInput("sub","Select the type of residence",choices = c("Urban" , "Rural"))}
+      else if (input$var == "Religion"){selectInput("sub","Select Religion",choices = c("Hindu","Muslim","Christian","Sikh","Buddhist","Other"))}
+      else if (input$var == "Caste"){selectInput("sub","Select Caste", choices = c("SC","ST","OBC","Other"))}
+      else if (input$var == "Wealth"){selectInput("sub","Select Wealth", choices = c("Lowest","Second","Middle","Fourth","Highest"))}
+      else if (input$var == "Schooling"){selectInput("sub","Schooling", choices = c("No schooling","<5 years complete","5-7 years complete","8-9 years complete","10-11 years complete", "12 or more years complete"))}
+      else {selectInput("sub", "Select Smoking status", choices = c("Smokes cigarettes/tobacco", "Does not smoke"))}}
+    else if (input$Sex == "Women") {
+      if (input$var == "Residence"){selectInput("sub","Select the type of residence",choices = c("Urban" , "Rural"))}
+      else if (input$var == "Religion"){selectInput("sub","Select Religion",choices = c("Hindu","Muslim","Christian","Sikh","Buddhist","Other"))}
+      else if (input$var == "Caste"){selectInput("sub","Select Caste", choices = c("SC","ST","OBC","Other"))}
+      else if (input$var == "Wealth"){selectInput("sub","Select Wealth", choices = c("Lowest","Second","Middle","Fourth","Highest"))}
+      else if (input$var == "Select Smoking status"){selectInput("Type","Select Smoking status", choices = c("Smokes cigarettes/tobacco","Does not smoke"))}
+      else if (input$var== "Schooling"){selectInput("sub","Schooling", choices = c("No schooling","<5 years complete","5-7 years complete","8-9 years complete","10-11 years complete", "12 or more years complete"))}
+      else{selectInput("sub","Choose Maternity Status",choices = c("Pregnant","Breastfeeding","Neither"))}}
+    else if (input$Sex == "Children") {
+      if (input$var == "Age"){selectInput("sub","Select the age group",choices = c("Age 6-8 months" , "Age 9-11 months", "Age 12-17 months", "Age 18-23 months", "Age 24-35 months", "Age 36-47 months", "Age 48-59 months"))}
+      else if (input$var == "Residence"){selectInput("sub","Select the type of residence",choices = c("Urban" , "Rural"))}
+      else if (input$var == "Religion"){selectInput("sub","Select Religion",choices = c("Hindu","Muslim","Christian","Sikh","Buddhist","Other"))}
+      else if (input$var == "Caste"){selectInput("sub","Select the Caste", choices = c("SC","ST","OBC","Other"))}
+      else if (input$var == "Wealth"){selectInput("sub","Select Wealth group", choices = c("Lowest","Second","Middle","Fourth","Highest"))}
+      else if (input$var == "Living Condition"){selectInput("sub","select Living status", choices = c("Living with both parents","Living only with mother", "Living only with father", "Living with neither parent"))}
+      else if (input$var == "Mother's Schooling"){selectInput("sub","select the Mother's Schooling", choices = c("No schooling", "<5 years", "5-7 years", "8-9 years", "10-11 years", "12 or more years"))}
+      else{selectInput("sub","Anemia Status of Mother",choices = c("Not anaemic(mother)","Mildly anaemic(mother)","Moderately anaemic(mother)", "Severely anaemic(mother)"))}}
+  })
+  
+  
+  
+  #Render Bar Plot of Anemia Prevalence population group wise
+  # Plotting the graph
+  output$barPlot3 <- renderPlotly({
+    selected_sub <- input$sub
+    selected_sex <- input$Sex
+    
+    # Assuming men_popgrpwise is your data set and it is available in the global environment
+    
+    # Filter the data to get the relevant row based on the selected Background
+    if (selected_sex == "Men") {
+      filtered_data <- anemia_men_other_factors[anemia_men_other_factors$Background == selected_sub, ]
+    } else if (selected_sex == "Women") {
+      filtered_data <- anemia_women_other_factors[anemia_women_other_factors$Background == selected_sub, ]
+    } else if (selected_sex == "Children") {
+      filtered_data <- anemia_children_other_factors[anemia_children_other_factors$Background == selected_sub, ]
+    }
+    
+    if (nrow(filtered_data) > 0) {
+      
+      g_melted <- melt(filtered_data, id.vars = "Background")
+      
+      palette1 <- colorRampPalette(c( "#10477EE6", "#10477e",  "#10477EE6", "#10477e"))(n = length(unique(g_melted$variable)))
+      
+      # Plot using ggplot2
+      p <- ggplot(g_melted, aes(x = variable, y = value, fill = variable)) +
+        geom_bar(stat = "identity", position = "dodge") +
+        scale_fill_manual(values = palette1) +
+        theme_minimal() +
+        theme(
+          axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(hjust = 0.5)
+        ) +
+        labs(
+          title = paste("Anemia Factors by", selected_sex),
+          x = "Factors",
+          y = "Values",
+          fill = "Factors"
+        )
+      
+      # Convert to Plot ly
+      ggplotly(p, tooltip = "y")
+    } else {
+      return(NULL)
+    }
+  })
+  # Reactive expression to get the selected category data
+  selected_df <- reactive({
+    if (input$dataset == "iodised_salt") {
+      df <- df1
+      df <- df %>%
+        mutate(category = case_when(
+          iodised_salt >= 80 & iodised_salt < 90 ~ "80-90",
+          iodised_salt >= 90 & iodised_salt < 95 ~ "90-95",
+          iodised_salt >= 95 ~ "above 95"
+        )) %>%
+        group_by(category) %>%
+        summarise(
+          avg_iodised_salt = mean(iodised_salt),
+          states = paste(State, "(", iodised_salt, "%)", collapse = "<br>"),
+          count = n()
+        ) %>%
+        mutate(x = case_when(
+          category == "80-90" ~ 96.5,
+          category == "90-95" ~ 97.5,
+          category == "above 95" ~ 97
+        ),
+        y = case_when(
+          category == "80-90" ~ 1,
+          category == "90-95" ~ 1,
+          category == "above 95" ~ 1.25
+        ))
+      df
+    } else {
+      df <- df2
+      df <- df %>%
+        mutate(category = case_when(
+          children_living_in_iodized_salt_households_below_5_years >= 80 & children_living_in_iodized_salt_households_below_5_years < 90 ~ "80-90",
+          children_living_in_iodized_salt_households_below_5_years >= 90 & children_living_in_iodized_salt_households_below_5_years < 95 ~ "90-95",
+          children_living_in_iodized_salt_households_below_5_years >= 95 ~ "above 95"
+        )) %>%
+        group_by(category) %>%
+        summarise(
+          avg_iodised_salt = mean(children_living_in_iodized_salt_households_below_5_years),
+          states = paste(State, "(", children_living_in_iodized_salt_households_below_5_years, "%)", collapse = "<br>"),
+          count = n()
+        ) %>%
+        mutate(x = case_when(
+          category == "80-90" ~ 96.5,
+          category == "90-95" ~ 97.5,
+          category == "above 95" ~ 97
+        ),
+        y = case_when(
+          category == "80-90" ~ 1,
+          category == "90-95" ~ 1,
+          category == "above 95" ~ 1.25
+        ))
+      df
+    }
+  })
+  
+  output$iodisedSaltPlot <- renderPlotly({
+    if (input$category == "Iodised salt consumption among adults") {
+      merged_df$adults_category <- cut(merged_df$iodised_salt_consumption_among_adults,
+                                       breaks = c(80, 90, 95, Inf),
+                                       labels = c("80-90%", "90-95%", "Above 95%"),
+                                       include.lowest = TRUE)
+      
+      plot_ly(merged_df, x = ~State, y = ~iodised_salt_consumption_among_adults, color = ~adults_category, mode = "lines+markers", group = ~adults_category) %>%
+        add_trace(type = "scatter", mode = "lines+markers", y = ~iodised_salt_consumption_among_adults,
+                  text = ~paste("State: ", State, "<br>Value: ", iodised_salt_consumption_among_adults),
+                  hoverinfo = "text",
+                  line = list(width = 0),
+                  marker = list(size = 8)) %>%
+        layout(title = "Iodised Salt Consumption Among Adults by Category",
+               xaxis = list(title = "State"),
+               yaxis = list(title = "Iodised Salt Consumption (%)"),
+               shapes = list(
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 80, y1 = 80, line = list(color = "black", width = 2, dash = "dash")),
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 90, y1 = 90, line = list(color = "black", width = 2, dash = "dash")),
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 95, y1 = 95, line = list(color = "black", width = 2, dash = "dash"))
+               ),
+               showlegend = TRUE,
+               height = 550) %>%
+        config(displayModeBar = TRUE)
+      
+    } else if (input$category == "Iodised salt consumption among children below 5 years") {
+      merged_df$children_category <- cut(merged_df$children_living_in_iodized_salt_households_below_5_years,
+                                         breaks = c(80, 90, 95, Inf),
+                                         labels = c("80-90%", "90-95%", "Above 95%"),
+                                         include.lowest = TRUE)
+      
+      plot_ly(merged_df, x = ~State, y = ~children_living_in_iodized_salt_households_below_5_years, color = ~children_category, mode = "lines+markers", group = ~children_category) %>%
+        add_trace(type = "scatter", mode = "lines+markers", y = ~children_living_in_iodized_salt_households_below_5_years,
+                  text = ~paste("State: ", State, "<br>Value: ", children_living_in_iodized_salt_households_below_5_years),
+                  hoverinfo = "text",
+                  line = list(width = 0),
+                  marker = list(size = 8)) %>%
+        layout(title = "Iodised Salt Consumption Among Children Below 5 Years by Category",
+               xaxis = list(title = "State"),
+               yaxis = list(title = "Iodised Salt Consumption (%)"),
+               shapes = list(
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 80, y1 = 80, line = list(color = "black", width = 1, dash = "dash")),
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 90, y1 = 90, line = list(color = "black", width = 1, dash = "dash")),
+                 list(type = "line", x0 = 0, x1 = 1, xref = "paper", y0 = 95, y1 = 95, line = list(color = "black", width = 1, dash = "dash"))
+               ),
+               showlegend = TRUE,
+               height = 550) %>%
+        config(displayModeBar = TRUE)
+    }
+  })
+  
+  observe({
+    data <- if (input$gender == "Men") men_data else women_data
+    
+    
+    india_sf_data <- india_sf %>% 
+      left_join(data, by = c("STNAME_SH" = "STNAME"))
+    
+    
+    if (input$extreme == "Highest") {
+      india_sf_data <- india_sf_data %>%
+        arrange(desc(!!sym(input$variable))) %>%
+        slice(1:5)
+    } else if (input$extreme == "Lowest") {
+      india_sf_data <- india_sf_data %>%
+        arrange(!!sym(input$variable)) %>%
+        slice(1:5)
+    }
+    
+    
+    india_sf_data[[paste0(input$variable, "_cat")]] <- cut(india_sf_data[[input$variable]], 
+                                                           breaks = c(-Inf, 20, 40, 60, 80, Inf), 
+                                                           labels = c("Below 20", "20-40","40-60", "60-80", "Above 80"))
+    
+    pal <- colorFactor(palette = c("#97CA94", "#FFA80B", "#E54B4B", "#3F8589", "#10477e"), domain = india_sf_data[[paste0(input$variable, "_cat")]])
+    
+    labels <- sprintf(
+      "<strong>%s</strong><br/>%s: %.1f%%",
+      india_sf_data$STNAME_SH, gsub("_", " ", input$variable), india_sf_data[[input$variable]]
+    ) %>% lapply(htmltools::HTML)
+    
+    output$map <- renderLeaflet({
+      leaflet(india_sf_data) %>%
+        addTiles() %>%
+        addPolygons(
+          fillColor = ~pal(india_sf_data[[paste0(input$variable, "_cat")]]),
+          weight = 1,
+          opacity = 1,
+          color = "white",
+          dashArray = "3",
+          fillOpacity = 0.7,
+          highlight = highlightOptions(
+            weight = 2,
+            color = "#666",
+            dashArray = "",
+            fillOpacity = 0.7,
+            bringToFront = TRUE
+          ),
+          label = labels,
+          labelOptions = labelOptions(
+            style = list("font-weight" = "normal", padding = "3px 8px"),
+            textsize = "15px",
+            direction = "auto"
+          )
+        ) %>%
+        addLegend(pal = pal, values = india_sf_data[[paste0(input$variable, "_cat")]], opacity = 0.7, title = NULL,
+                  position = "topright")
+    })
+  })
+  
+  
+  
+  output$barPlot <- renderPlotly({
+    selected_cost <- input$cost_type
+    df_melted <- melt(df, id.vars = "country")
+    df_filtered <- df_melted[df_melted$variable == selected_cost, ]
+    
+    custom_colors <- c("United States" = "#10477e",  "Pakistan" = "#10477ECC", "Nigeria" = "#10477e","Nepal" = "#10477ECC", "India" = "red","Mexico"= "#10477e", "Chile"= "#10477e", "Bangladesh"="#10477ECC" )
+    
+    custom_colors["India"] <- "red" 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    p <- ggplot(df_filtered, aes(x = country, y = value, fill = country)) + 
+      geom_bar(stat = "identity") + 
+      labs(title = paste("", gsub("_", " ", selected_cost)), x = "Country", y = "Cost in $") + 
+      scale_fill_manual(values =custom_colors) + 
+      coord_flip() + 
+      theme_minimal() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
+    ggplotly(p, tooltip = "y") 
+  })
+  
+  
+  # Combine all anemia data into a single list 
+  
+  
+  
+  
+  
+  observe({
+    
+    
+    merged_data_anemiamap <-if(input$Category1=="Women") anemia_data_women else if (input$Category1=="Men") anemia_data_men else anemia_data_children
+    
+    
+    
+    
+    india_sf_data <- india_states %>%
+      left_join(merged_data_anemiamap, by = c("STNAME_SH" = "STNAME"))
+    
+    
+    
+    if (input$extreme1 == "Highest") {
+      india_sf_data <- india_sf_data %>%
+        arrange(desc(Any_Anemia)) %>%
+        head(5)  # Select top 5 highest values
+    } else if (input$extreme1 == "Lowest") {
+      india_sf_data <- india_sf_data %>%
+        arrange(Any_Anemia) %>%
+        head(5)  # Select top 5 lowest values
+    }
+    
+    india_sf_data$Any_Anemia_cat <- cut(india_sf_data$Any_Anemia, 
+                                        breaks = c(-Inf, 40, 50, 60, 70, Inf), 
+                                        labels = c("Below 40%", "40-50%","50-60%", "60-70%", "Above 70%"))
+    
+    pal <- colorFactor(palette = c("#97CA94", "#FFA80B", "#E54B4B", "#3F8589", "#10477e"), domain = india_sf_data$Any_Anemia_cat)
+    
+    labels <- sprintf(
+      "<strong>%s</strong><br/>Anemia Prevalence: %.1f%%",
+      india_sf_data$STNAME_SH, india_sf_data$Any_Anemia
+    ) %>% lapply(htmltools::HTML)
+    
+    output$indiamap <- renderLeaflet({
+      leaflet(india_sf_data) %>%
+        addTiles() %>%
+        addPolygons(
+          fillColor = ~pal(india_sf_data$Any_Anemia_cat),
+          weight = 1,
+          opacity = 1,
+          color = "white",
+          dashArray = "3",
+          fillOpacity = 0.7,
+          highlight = highlightOptions(
+            weight = 2,
+            color = "#666",
+            dashArray = "",
+            fillOpacity = 0.7,
+            bringToFront = TRUE
+          ),
+          label  = ~lapply(if (input$Category1 == "Women") 
+            paste0("<strong>", STNAME, "</strong><br/>",
+                   "Any Anemia( less than 12.0 g/dl): ", 
+                   anemia_data_women$Any_Anemia, "<br/>",
+                   "Severe Anemia(less than 8.0 g/dl): ",
+                   anemia_data_women$Severe,  "<br/>",
+                   "Moderate Anemia(8.0-10.9 g/dl): ",
+                   anemia_data_women$Moderate, "<br/>",
+                   "Mild Anemia(11.0-11.9 g/dl): ", 
+                   anemia_data_women$Mild, 
+                   "<br/>"
+            )
+            
+            else if(input$Category1 == "Men")
+              paste0("<strong>", STNAME, "</strong><br/>",
+                     "Any Anemia(less than 13.0): ", 
+                     anemia_data_men$Any_Anemia, "<br/>",
+                     "Severe Anemia(less than9.0 g/dl): ",
+                     anemia_data_men$Severe, "<br/>",
+                     "Moderate Anemia(9.0-11.9 g/dl): ",
+                     anemia_data_men$Moderate, "<br/>",
+                     "Mild Anemia(12.0-12.9 g/dl): ",
+                     anemia_data_men$Mild,
+                     
+                     "%<br/>")
+            else
+              paste0("<strong>", STNAME, "</strong><br/>",
+                     "Any Anemia(less than 11.0 g/dl): ", 
+                     anemia_data_men$Any_Anemia, "<br/>",
+                     "Severe Anemia(less than 7.0 g/dl): ",
+                     anemia_data_men$Severe,"<br/>",
+                     "Moderate Anemia(7.0-9.9 g/dl): ",
+                     anemia_data_men$Moderate, "<br/>",
+                     "Mild Anemia(10-10.9 g/dl): ",
+                     anemia_data_men$Mild,
+                     
+                     "%<br/>"),
+            HTML
+          ),
+          labelOptions = labelOptions(
+            style = list("font-weight" = "normal", padding = "3px 8px"),
+            textsize = "15px",
+            direction = "auto"
+          )
+        ) %>%
+        addLegend(pal = pal, values = india_sf_data$Any_Anemia_cat, opacity = 1, title = NULL,
+                  position = "topright")
+    })
+  })
+  
+}
+shinyApp(ui,server)
+
+```
+
